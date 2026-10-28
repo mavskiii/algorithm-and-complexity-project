@@ -1,7 +1,8 @@
+import type { TraceKind } from './lessonExamples';
 export type Topic = {
   id: string; title: string; short: string; group: string; summary: string;
   use: string; time: string; space: string; code: string; keywords: string;
-  trace?: "bfs" | "dfs" | "dijkstra"; quiz: { question: string; options: string[]; answer: number };
+  trace: TraceKind; quiz: { question: string; options: string[]; answer: number };
 };
 
 export const topics: Topic[] = [
@@ -30,7 +31,7 @@ while priorityQueue is not empty:
     if candidate < dist[v]:
       dist[v] = candidate
       update priorityQueue with v`, quiz:{question:"Which edge weights are valid for Dijkstra's algorithm?",options:["Only negative weights","Any weights","Non-negative weights"],answer:2} },
-  { id:"bellman-ford", title:"Bellman-Ford algorithm", short:"Bellman-Ford", group:"Shortest paths", summary:"Bellman-Ford relaxes every edge V − 1 times. One extra pass can reveal a reachable negative-weight cycle.", use:"Find single-source shortest paths with negative edges, or detect a reachable negative cycle.", time:"O(V · E)", space:"O(V)", keywords:"negative weights negative cycle relax edges", code:`dist[start] = 0
+  { id:"bellman-ford", title:"Bellman-Ford algorithm", short:"Bellman-Ford", group:"Shortest paths", summary:"Bellman-Ford relaxes every edge V − 1 times. One extra pass can reveal a reachable negative-weight cycle.", use:"Find single-source shortest paths with negative edges, or detect a reachable negative cycle.", time:"O(V · E)", space:"O(V)", trace:"bellman-ford", keywords:"negative weights negative cycle relax edges", code:`dist[start] = 0
 dist[all other nodes] = infinity
 
 repeat V - 1 times:
@@ -41,14 +42,14 @@ repeat V - 1 times:
 for each edge (u, v, weight):
   if dist[u] + weight < dist[v]:
     report reachable negative cycle`, quiz:{question:"What can the extra relaxation pass detect?",options:["A reachable negative cycle","A minimum spanning tree","A topological order"],answer:0} },
-  { id:"floyd-warshall", title:"Floyd–Warshall algorithm", short:"Floyd–Warshall", group:"Shortest paths", summary:"Floyd–Warshall builds a distance matrix. For each possible intermediate node k, it checks whether the route from i to j becomes shorter through k.", use:"Find all-pairs shortest paths in a small or dense graph.", time:"O(V³)", space:"O(V²)", keywords:"all pairs dynamic programming matrix", code:`dist = adjacencyMatrix
+  { id:"floyd-warshall", title:"Floyd–Warshall algorithm", short:"Floyd–Warshall", group:"Shortest paths", summary:"Floyd–Warshall builds a distance matrix. For each possible intermediate node k, it checks whether the route from i to j becomes shorter through k.", use:"Find all-pairs shortest paths in a small or dense graph.", time:"O(V³)", space:"O(V²)", trace:"floyd-warshall", keywords:"all pairs dynamic programming matrix", code:`dist = adjacencyMatrix
 
 for k in nodes:
   for i in nodes:
     for j in nodes:
       if dist[i][k] + dist[k][j] < dist[i][j]:
         dist[i][j] = dist[i][k] + dist[k][j]`, quiz:{question:"What does Floyd–Warshall compute?",options:["One spanning tree","All-pairs shortest paths","A DFS traversal"],answer:1} },
-  { id:"prim", title:"Prim's algorithm", short:"Prim", group:"Spanning trees", summary:"Prim grows a minimum spanning tree from a start node. At each step it adds the cheapest edge connecting the current tree to a new node.", use:"Build a minimum spanning tree, especially for dense graphs.", time:"O(E log V)", space:"O(V)", keywords:"minimum spanning tree mst greedy priority queue", code:`tree = {start}
+  { id:"prim", title:"Prim's algorithm", short:"Prim", group:"Spanning trees", summary:"Prim grows a minimum spanning tree from a start node. At each step it adds the cheapest edge connecting the current tree to a new node.", use:"Build a minimum spanning tree, especially for dense graphs.", time:"O(E log V)", space:"O(V)", trace:"prim", keywords:"minimum spanning tree mst greedy priority queue", code:`tree = {start}
 priorityQueue = edges leaving tree
 
 while tree does not contain every node:
@@ -57,7 +58,7 @@ while tree does not contain every node:
     add (u, v) to tree
     add v to tree
     add edges leaving v to priorityQueue`, quiz:{question:"How does Prim grow its spanning tree?",options:["Choose the cheapest edge connecting the tree to a new node","Choose the largest edge","Add every edge"],answer:0} },
-  { id:"kruskal", title:"Kruskal's algorithm", short:"Kruskal", group:"Spanning trees", summary:"Kruskal sorts edges by weight and adds each edge unless it would create a cycle. A union-find structure makes cycle checks efficient.", use:"Build a minimum spanning tree, especially for sparse graphs.", time:"O(E log E)", space:"O(V)", keywords:"minimum spanning tree mst union find sort edges", code:`sort edges by increasing weight
+  { id:"kruskal", title:"Kruskal's algorithm", short:"Kruskal", group:"Spanning trees", summary:"Kruskal sorts edges by weight and adds each edge unless it would create a cycle. A union-find structure makes cycle checks efficient.", use:"Build a minimum spanning tree, especially for sparse graphs.", time:"O(E log E)", space:"O(V)", trace:"kruskal", keywords:"minimum spanning tree mst union find sort edges", code:`sort edges by increasing weight
 tree = empty set
 create a disjoint set for each node
 
@@ -65,7 +66,7 @@ for each edge (u, v, weight):
   if find(u) != find(v):
     add edge to tree
     union(u, v)`, quiz:{question:"What helps Kruskal efficiently check whether an edge creates a cycle?",options:["A FIFO queue","A distance matrix","Union-find"],answer:2} },
-  { id:"topological", title:"Topological sorting", short:"Topological sort", group:"Ordering", summary:"A topological sort orders the nodes of a directed acyclic graph so every edge points forward in the list.", use:"Order tasks with dependencies, plan build sequences, or organize course prerequisites.", time:"O(V + E)", space:"O(V)", keywords:"dag ordering dependencies kahn in-degree", code:`queue = nodes with in-degree 0
+  { id:"topological", title:"Topological sorting", short:"Topological sort", group:"Ordering", summary:"A topological sort orders the nodes of a directed acyclic graph so every edge points forward in the list.", use:"Order tasks with dependencies, plan build sequences, or organize course prerequisites.", time:"O(V + E)", space:"O(V)", trace:"topological", keywords:"dag ordering dependencies kahn in-degree", code:`queue = nodes with in-degree 0
 order = []
 
 while queue is not empty:

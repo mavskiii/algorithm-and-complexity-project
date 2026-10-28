@@ -2,12 +2,18 @@
   "name": "algo-and-complexity",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "concurrently -k -n API,WEB -c green,blue \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
-    "start": "npm run start -w server"
+    "start": "npm run start -w server",
+    "test": "node --test scripts/test-lessons.mjs"
   },
-  "devDependencies": { "concurrently": "^9.2.1" }
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.25.12"
+  }
 }
-

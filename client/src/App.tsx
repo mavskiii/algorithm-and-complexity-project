@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { Bot, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clock3, Code2, CornerDownLeft, Menu, MessageCircle, RotateCcw, Search, Send, Sparkles, X } from "lucide-react";
+import { Bot, BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clock3, Code2, CornerDownLeft, Menu, MessageCircle, RotateCcw, Search, Send, Sparkles, Sun, Moon, X } from "lucide-react";
 import { createTrace, type TraceStep } from "./algorithms";
-import { groups, sampleEdges, sampleNodes, topics, type Topic } from "./data";
+import { groups, topics, type Topic } from "./data";
 import GraphCard from "./GraphCard";
+import LessonVisualizer from "./LessonVisualizer";
+import { lessonNotes } from "./lessonNotes";
+import { useTheme } from "./theme";
 import { formatDijkstraTrace, parseGraphPrompt, type StudentGraph } from "./interactiveGraph";
 
 type ChatMessage = { role:"user"|"assistant"; content:string; graph?:StudentGraph };
@@ -10,15 +13,8 @@ const STARTER:ChatMessage = {role:"assistant",content:"Hi! I'm your Group 4 stud
 const STORAGE_KEY="graphite-course-progress-v1";
 const INITIAL_PROGRESS:string[]=[];
 function loadProgress():string[]{try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");return Array.isArray(value)?value.filter((x):x is string=>typeof x==="string"):INITIAL_PROGRESS}catch{return INITIAL_PROGRESS}}
-function nodePositions(width=520,height=230):Record<string,[number,number]>{return {A:[50,height/2],B:[width*.34,45],C:[width*.68,45],D:[width*.34,height-45],E:[width*.68,height-45],F:[width-50,height/2]}}
-function Graph({step}: {step:TraceStep}) {
-  const pos=nodePositions();
-  return <svg className="graph-svg" viewBox="0 0 520 230" role="img" aria-label={`Sample graph. Current node: ${step.current||"none"}`}>
-    {sampleEdges.map(([a,b,w])=>{const [x1,y1]=pos[a],[x2,y2]=pos[b];const active=step.highlighted?.includes([a,b].sort().join(""));return <g key={a+b}><line x1={x1} y1={y1} x2={x2} y2={y2} className={active?"edge edge-active":"edge"}/>{w>0&&<><rect x={(x1+x2)/2-11} y={(y1+y2)/2-10} width="22" height="18" rx="5" className="weight-bg"/><text x={(x1+x2)/2} y={(y1+y2)/2+4} textAnchor="middle" className="weight">{w}</text></>}</g>})}
-    {sampleNodes.map(node=>{const [cx,cy]=pos[node];const current=step.current===node,visited=step.visited.includes(node),waiting=step.waiting.includes(node);const dist=step.distances?.[node];return <g key={node}><circle cx={cx} cy={cy} r="19" className={current?"node node-current":visited?"node node-visited":waiting?"node node-waiting":"node"}/><text x={cx} y={cy+5} textAnchor="middle" className={current?"node-label node-label-active":"node-label"}>{node}</text>{dist!==undefined&&<text x={cx} y={cy+36} textAnchor="middle" className="distance">{dist===Infinity?"∞":dist}</text>}</g>})}
-  </svg>;
-}
 function App() {
+  const { theme, toggle: toggleTheme } = useTheme();
   const [topicId,setTopicId]=useState("bfs"),[filter,setFilter]=useState(""),[activeTab,setActiveTab]=useState<"overview"|"code"|"practice">("overview");
   const [completed,setCompleted]=useState<string[]>(loadProgress),[stepIndex,setStepIndex]=useState(0),[sidebarOpen,setSidebarOpen]=useState(false);
   const [messages,setMessages]=useState<ChatMessage[]>([STARTER]),[draft,setDraft]=useState(""),[busy,setBusy]=useState(false),[activeGraph,setActiveGraph]=useState<StudentGraph|null>(null);
@@ -29,6 +25,7 @@ function App() {
   const step=trace[Math.min(stepIndex,trace.length-1)]??{current:null,visited:[],waiting:[],detail:"",label:"",value:""} as TraceStep;
   const filtered=useMemo(()=>{const q=filter.trim().toLowerCase();return topics.filter(t=>!q||(t.title+" "+t.keywords+" "+t.group).toLowerCase().includes(q))},[filter]);
   const count=completed.length;
+  const notes=lessonNotes[topic.id];
   useEffect(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(completed))}catch{}},[completed]);
   useEffect(()=>{if(messages[messages.length-1]?.graph)graphStart.current?.scrollIntoView({behavior:"smooth",block:"start"});else chatEnd.current?.scrollIntoView({behavior:"smooth",block:"end"})},[messages.length,busy]);
   useEffect(()=>{fetch("/api/health").then(r=>r.json()).then(d=>{setApiStatus(d.configured?"ready":"setup")}).catch(()=>setApiStatus("setup"))},[]);
@@ -67,7 +64,7 @@ function App() {
   async function copyCode(){try{await navigator.clipboard.writeText(topic.code);return "Copied ✓"}catch{return "Copy unavailable"}}
   const connectionText=apiStatus==="ready"?"Tutor connected":apiStatus==="checking"?"Checking tutor…":"Add API keys to enable the tutor";
   return <div className="app-shell">
-    <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setSidebarOpen(v=>!v)} aria-label="Toggle lesson list">{sidebarOpen?<X size={19}/>:<Menu size={19}/>}</button><span className="brand">Group 4 BSCS 3-B</span><span className="top-divider"/><span className="course-label">Algorithms &amp; Complexity</span><div className="top-right"><span className="course-pill"><BookOpen size={13}/> Learning workspace</span></div></header>
+    <header className="topbar"><button className="icon-button mobile-menu" onClick={()=>setSidebarOpen(v=>!v)} aria-label="Toggle lesson list">{sidebarOpen?<X size={19}/>:<Menu size={19}/>}</button><span className="brand">Group 4 BSCS 3-B</span><span className="top-divider"/><span className="course-label">Algorithms &amp; Complexity</span><div className="top-right"><button className="theme-toggle" onClick={toggleTheme} aria-label={theme==="dark"?"Switch to light mode":"Switch to dark mode"} aria-pressed={theme==="dark"}>{theme==="dark"?<Sun size={18}/>:<Moon size={18}/>}<span>{theme==="dark"?"Light mode":"Dark mode"}</span></button><span className="course-pill"><BookOpen size={13}/> Learning workspace</span></div></header>
     <div className="workspace">
       <aside className={sidebarOpen?"sidebar sidebar-open":"sidebar"}><div className="sidebar-heading"><div><div className="eyebrow">Course content</div><div className="lesson-total">{topics.length} lessons</div></div><ChevronDown size={16} className="collapse-mark"/></div>
         <label className="search-box"><Search size={15}/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Find a lesson…" aria-label="Search lessons"/>{filter&&<button className="clear-search" onClick={()=>setFilter("")} aria-label="Clear search"><X size={13}/></button>}</label>
@@ -79,7 +76,8 @@ function App() {
         <h1>{topic.title}</h1><p className="lesson-summary">{topic.summary}</p>
         <div className="tabs" role="tablist" aria-label="Lesson sections">{(["overview","code","practice"] as const).map((tab,index)=><button role="tab" id={`tab-${tab}`} aria-selected={activeTab===tab} aria-controls={tab} tabIndex={activeTab===tab?0:-1} className={activeTab===tab?"tab active":"tab"} key={tab} onClick={()=>setActiveTab(tab)} onKeyDown={e=>{if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();const next=(index+(e.key==="ArrowRight"?1:2))%3;setActiveTab((["overview","code","practice"] as const)[next]);document.getElementById(`tab-${(["overview","code","practice"] as const)[next]}`)?.focus()}}}>{tab==="overview"?"Overview":tab==="code"?"Pseudocode":"Quick check"}{tab==="practice"&&<span className="tab-arrow">↗</span>}</button>)}</div>
         {activeTab==="overview"&&<section id="overview" role="tabpanel" aria-labelledby="tab-overview">
-          {topic.trace&&<><div className="section-title-row"><h2>Watch the algorithm unfold</h2><span className="subtle">Sample weighted graph · 6 vertices</span></div><div className="visualizer-card"><div className="visualizer-heading"><div><span className="visualizer-title">{topic.short} trace</span><span className="visualizer-subtitle">Starting at node A</span></div><span className="trace-index">{String(stepIndex+1).padStart(2,"0")} <span>/ {trace.length}</span></span></div><div className="graph-wrap"><Graph step={step}/></div><div className="graph-legend"><span><i className="legend-dot"/><span>Unvisited</span></span><span><i className="legend-dot visited"/><span>Visited</span></span><span><i className="legend-dot current"/><span>Current</span></span><span><i className="legend-dot waiting"/><span>Waiting</span></span></div><div className="trace-controls"><button className="control-button" onClick={()=>setStepIndex(0)} aria-label="Reset trace"><RotateCcw size={15}/></button><button className="control-button" onClick={()=>setStepIndex(n=>Math.max(0,n-1))} disabled={stepIndex===0} aria-label="Previous trace step"><ChevronLeft size={17}/></button><button className="next-step" onClick={()=>setStepIndex(n=>Math.min(trace.length-1,n+1))} disabled={stepIndex>=trace.length-1}>Next step <ChevronRight size={15}/></button><span className="step-count">Step {stepIndex+1} of {trace.length}</span></div></div><div className="step-explanation"><div className="step-icon"><Sparkles size={15}/></div><div className="step-copy"><span className="eyebrow">What happens</span><p>{step.detail}</p><div className="step-data"><strong>{step.label}:</strong><code>{step.value}</code></div></div><button className="ask-step" onClick={()=>ask("Explain this graph step: "+step.detail)} title="Ask the tutor about this step"><MessageCircle size={16}/></button></div></>}
+          <section className="lesson-about" aria-label="About this algorithm"><h2>What is {topic.short}?</h2><p>{notes.description}</p><h3>Where is it used?</h3><ul>{notes.uses.map(use=><li key={use}>{use}</li>)}</ul><div className="real-example"><span className="eyebrow">Real-world example</span><p>{notes.example}</p></div><p className="remember-note"><strong>Keep in mind:</strong> {notes.remember}</p></section>
+          <LessonVisualizer key={topic.id} kind={topic.trace} title={topic.short} trace={trace} index={stepIndex} onIndexChange={setStepIndex} onAsk={ask}/>
           <div className="complexity-grid"><article className="complexity-card"><span className="eyebrow"><Clock3 size={13}/> Time complexity</span><strong>{topic.time}</strong><span className="complexity-caption">{topic.id==="bfs"||topic.id==="dfs"?"With adjacency lists":"Standard implementation"}</span></article><article className="complexity-card"><span className="eyebrow"><Code2 size={13}/> Space complexity</span><strong>{topic.space}</strong><span className="complexity-caption">Auxiliary storage</span></article></div>
           <section className="use-card"><div className="eyebrow">When should you use it?</div><p>{topic.use}</p><button className="text-action" onClick={()=>ask("Explain "+topic.title+" in simple terms")}><Sparkles size={14}/> Explain this lesson</button></section>
         </section>}
